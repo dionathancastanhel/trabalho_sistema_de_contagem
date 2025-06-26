@@ -1,0 +1,59 @@
+const int trig1 = 2;
+ const int echo1 = 3;
+ const int trig2 = 4;
+ const int echo2 = 5;
+ int contador = 0;
+ bool pessoaPassando = false;
+ unsigned long tempoUltimoMovimento = 0;
+ long medirDistancia(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  long duracao = pulseIn(echoPin, HIGH, 20000); // timeout de 20ms
+  long distancia = duracao * 0.034 / 2;
+  return distancia;
+ }
+ void setup() {
+  pinMode(trig1, OUTPUT);
+  pinMode(echo1, INPUT);
+  pinMode(trig2, OUTPUT);
+  pinMode(echo2, INPUT);
+  Serial.begin(9600);
+ }
+ void loop() {
+  long dist1 = medirDistancia(trig1, echo1);
+  long dist2 = medirDistancia(trig2, echo2);
+  const int LIMIAR = 15;
+  if (dist1 < LIMIAR && dist2 > LIMIAR && !pessoaPassando) {
+    pessoaPassando = true;
+    tempoUltimoMovimento = millis();
+    while ((millis() - tempoUltimoMovimento) < 1000) {
+      dist2 = medirDistancia(trig2, echo2);
+      if (dist2 < LIMIAR) {
+        contador++;
+        break;
+      }
+    }
+    pessoaPassando = false;
+  }
+  else if (dist2 < LIMIAR && dist1 > LIMIAR && !pessoaPassando) {
+    pessoaPassando = true;
+    tempoUltimoMovimento = millis();
+    while ((millis() - tempoUltimoMovimento) < 1000) {
+      dist1 = medirDistancia(trig1, echo1);
+      if (dist1 < LIMIAR) {
+        contador--;
+        if (contador < 0) contador = 0;
+        break;
+      }
+    }
+    pessoaPassando = false;
+  }
+  static unsigned long ultimaTransmissao = 0;
+  if (millis() - ultimaTransmissao > 15000) {
+    Serial.println(contador);
+    ultimaTransmissao = millis();
+  }
+ }
